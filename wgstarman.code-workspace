@@ -1,0 +1,17 @@
+{
+	"folders": [
+		{
+			"path": "src",
+			"name": "Sources"
+		},
+		{
+			"path": "poc",
+			"name": "Proof of Concept"
+		},
+		{
+			"path": ".",
+			"name": "Whole project"
+		}
+	],
+	"settings": {}
+}
