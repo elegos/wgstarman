@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from argparse import _SubParsersAction, Namespace
+from argparse import Namespace, _SubParsersAction
 
 
 class CLICommand(ABC):

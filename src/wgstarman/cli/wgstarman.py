@@ -1,11 +1,10 @@
 from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser
 from typing import List
 
-from wgcli.exec import WireGuardCLI
-
-from cli.common import CLICommand
-from cli.peer import PeerCommand
-from cli.server import ServerCommand
+from wgstarman.cli.common import CLICommand
+from wgstarman.cli.peer import PeerCommand
+from wgstarman.cli.server import ServerCommand
+from wgstarman.wgcli.exec import WireGuardCLI
 
 
 def main():

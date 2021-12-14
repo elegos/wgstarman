@@ -9,16 +9,17 @@ from threading import Event, Lock, Thread
 from typing import Dict, List, Tuple, Union
 
 from cryptography.fernet import Fernet, InvalidToken
-from decorators import syncronized
-from wg_conf import Interface, Peer, WireGuardConf
-from wgcli.exec import WireGuardCLI
 
-from cli.common import CLICommand
-from cli.protocol import (AcknowledgeResponse, ErrorCode, ErrorResponse,
-                          IPAddressHoldRequest, IPAddressRequest,
-                          IPAddressResponse, Message, MessageEncDec,
-                          read_message, send_message)
-from cli.wgstarman_conf import WGStarManConf
+from wgstarman.cli.common import CLICommand
+from wgstarman.cli.protocol import (AcknowledgeResponse, ErrorCode,
+                                    ErrorResponse, IPAddressHoldRequest,
+                                    IPAddressRequest, IPAddressResponse,
+                                    Message, MessageEncDec, read_message,
+                                    send_message)
+from wgstarman.cli.wgstarman_conf import WGStarManConf
+from wgstarman.decorators import syncronized
+from wgstarman.wg_conf import Interface, Peer, WireGuardConf
+from wgstarman.wgcli.exec import WireGuardCLI
 
 LOG_FORMAT = '%(asctime)23s %(levelname)8s %(message)s'
 

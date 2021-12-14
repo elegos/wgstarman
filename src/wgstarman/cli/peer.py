@@ -1,19 +1,17 @@
 import ipaddress
 import logging
-import re
 import socket
 from argparse import (SUPPRESS, ArgumentDefaultsHelpFormatter, ArgumentParser,
                       Namespace, _SubParsersAction)
 from typing import Union
 
-from wg_conf import Interface, Peer, WireGuardConf
-from wgcli.exec import WireGuardCLI
-
-from cli.common import CLICommand
-from cli.protocol import (AcknowledgeResponse, ErrorResponse,
-                          IPAddressHoldRequest, IPAddressRequest,
-                          IPAddressResponse, MessageEncDec, read_message,
-                          send_message)
+from wgstarman.cli.common import CLICommand
+from wgstarman.cli.protocol import (AcknowledgeResponse, ErrorResponse,
+                                    IPAddressHoldRequest, IPAddressRequest,
+                                    IPAddressResponse, MessageEncDec,
+                                    read_message, send_message)
+from wgstarman.wg_conf import Interface, Peer, WireGuardConf
+from wgstarman.wgcli.exec import WireGuardCLI
 
 LOG_FORMAT = '%(levelname)9s %(message)s'
 

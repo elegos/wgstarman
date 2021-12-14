@@ -1,8 +1,8 @@
-from dataclasses import dataclass, field
 import logging
+from collections import namedtuple
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
-from collections import namedtuple
 
 DEFAULT_WIREGUARD_ETC_DIR = '/etc/wireguard'
 
