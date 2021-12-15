@@ -9,6 +9,10 @@ from typing import Any, ClassVar, Dict, List, Optional, Type, TypeVar
 from cryptography.fernet import Fernet
 
 
+class ProtocolException(Exception):
+    pass
+
+
 class ErrorCode(Enum):
     NETWORK_IS_FULL = 10001,
     INVALID_IP_ADDRESS = 10002,
@@ -60,6 +64,8 @@ class AcknowledgeResponse(Message):
 T = TypeVar('T', bound=Message)
 REGISTERED_MESSAGES: List[Type[T]] = [IPAddressRequest, IPAddressHoldRequest,
                                       IPAddressResponse, ErrorResponse, AcknowledgeResponse]
+
+INVALID_MSG_LEN = 0xFFFF
 
 
 class MessageEncDec:
@@ -115,10 +121,19 @@ def send_message(conn: socket.socket, msg: Any, encrypt_key: bytes) -> None:
     conn.send(msg)
 
 
+def send_invalid_token_message(conn: socket.socket) -> None:
+    msg = INVALID_MSG_LEN.to_bytes(4, 'big', signed=False)
+
+    conn.send(msg)
+
+
 def read_message(conn: socket.socket, decrypt_key: bytes) -> str:
     fernet = Fernet(decrypt_key)
 
     msg_len = int.from_bytes(conn.recv(4), 'big', signed=False)
+    if msg_len == INVALID_MSG_LEN:
+        raise ProtocolException('The pre-shared key is invalid.')
+
     msg = conn.recv(msg_len)
     msg = fernet.decrypt(msg).decode('utf8')
 

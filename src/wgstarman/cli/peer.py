@@ -8,7 +8,7 @@ from typing import Union
 from wgstarman.cli.common import CLICommand
 from wgstarman.cli.protocol import (AcknowledgeResponse, ErrorResponse,
                                     IPAddressHoldRequest, IPAddressRequest,
-                                    IPAddressResponse, MessageEncDec,
+                                    IPAddressResponse, MessageEncDec, ProtocolException,
                                     read_message, send_message)
 from wgstarman.wg_conf import Interface, Peer, WireGuardConf
 from wgstarman.wgcli.exec import WireGuardCLI
@@ -77,30 +77,33 @@ class PeerCommand(CLICommand):
         logging.debug(f'Connecting to central peer ({server_address} : {args.server_port})')
         sock = socket.create_connection((server_address, args.server_port), 5000)
 
-        # Request an IP address assigned to the public key
-        send_message(sock, IPAddressRequest(public_key), encdec_key)
-        response: Union[IPAddressResponse, ErrorResponse] = MessageEncDec.loads(
-            read_message(sock, encdec_key))
-        if response.instance_of(ErrorResponse):
-            logging.error(f'{response.error_code}: {response.message}')
-            return
+        try:
+            # Request an IP address assigned to the public key
+            send_message(sock, IPAddressRequest(public_key), encdec_key)
+            response: Union[IPAddressResponse, ErrorResponse] = MessageEncDec.loads(
+                read_message(sock, encdec_key))
+            if response.instance_of(ErrorResponse):
+                logging.error(f'{response.error_code}: {response.message}')
+                return
 
-        conf = WireGuardConf(
-            Interface(private_key=private_key, address=[
-                      response.peer_address]),
-            [Peer(public_key=response.server_public_key, allowed_ips=[response.peer_allowed_ips],
-                  endpoint=f'{server_address}:{args.server_port}', persistend_keep_alive=25 if args.keep_alive else None)]
-        )
+            conf = WireGuardConf(
+                Interface(private_key=private_key, address=[
+                    response.peer_address]),
+                [Peer(public_key=response.server_public_key, allowed_ips=[response.peer_allowed_ips],
+                      endpoint=f'{server_address}:{args.server_port}', persistend_keep_alive=25 if args.keep_alive else None)]
+            )
 
-        # Send the IP address hold message
-        sock = socket.create_connection((server_address, args.server_port), 5000)
-        send_message(sock, IPAddressHoldRequest(conf.interface.address[0]), encdec_key)
-        response: Union[AcknowledgeResponse, ErrorResponse] = MessageEncDec.loads(
-            read_message(sock, encdec_key))
-        if response.instance_of(ErrorResponse):
-            logging.error(f'{response.error_code}: {response.message}')
-            return
+            # Send the IP address hold message
+            sock = socket.create_connection((server_address, args.server_port), 5000)
+            send_message(sock, IPAddressHoldRequest(conf.interface.address[0]), encdec_key)
+            response: Union[AcknowledgeResponse, ErrorResponse] = MessageEncDec.loads(
+                read_message(sock, encdec_key))
+            if response.instance_of(ErrorResponse):
+                logging.error(f'{response.error_code}: {response.message}')
+                return
 
-        conf.save(args.device_name)
+            conf.save(args.device_name)
 
-        WireGuardCLI.up(args.device_name)
+            WireGuardCLI.up(args.device_name)
+        except ProtocolException as e:
+            logging.error(e)

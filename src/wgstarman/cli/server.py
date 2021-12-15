@@ -14,7 +14,7 @@ from wgstarman.cli.common import CLICommand
 from wgstarman.cli.protocol import (AcknowledgeResponse, ErrorCode,
                                     ErrorResponse, IPAddressHoldRequest,
                                     IPAddressRequest, IPAddressResponse,
-                                    Message, MessageEncDec, read_message,
+                                    Message, MessageEncDec, read_message, send_invalid_token_message,
                                     send_message)
 from wgstarman.cli.wgstarman_conf import WGStarManConf
 from wgstarman.decorators import syncronized
@@ -223,6 +223,7 @@ class ServerCommand(CLICommand):
 
             connection.close()
         except InvalidToken:
+            send_invalid_token_message(connection)
             logging.warning(
                 f'User {address[0]} attempted to connect using an invalid pre-shared key')
 
