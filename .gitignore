@@ -1,3 +1,5 @@
+/build
+/dist
+/poc
 __pycache__
 **/*.egg-info
-poc/
