@@ -2,7 +2,7 @@ import inspect
 import json
 import logging
 import socket
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, ClassVar, Dict, List, Optional, Type, TypeVar
 
@@ -16,7 +16,8 @@ class ProtocolException(Exception):
 class ErrorCode(Enum):
     NETWORK_IS_FULL = 10001,
     INVALID_IP_ADDRESS = 10002,
-    UNABLE_TO_RELOAD_CONFIGURATION = 10003,
+    HOST_NAME_THEFT = 10003,
+    UNABLE_TO_RELOAD_CONFIGURATION = 10004,
 
 
 class Message:
@@ -29,6 +30,7 @@ class Message:
 @dataclass
 class IPAddressRequest(Message):
     public_key: str
+    peer_name: Optional[str] = field(default=None)
 
     message_type: ClassVar[str] = 'request_ip_address'
 
@@ -36,6 +38,7 @@ class IPAddressRequest(Message):
 @dataclass
 class IPAddressHoldRequest(Message):
     ip_address: str
+    host_name: Optional[str]
 
     message_type: ClassVar[str] = 'request_ip_address_hold'
 

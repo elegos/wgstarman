@@ -39,6 +39,8 @@ class PeerCommand(CLICommand):
                               help="the server's port", required=False)
         optional.add_argument('--keep-alive', default=False, action='store_true',
                               help='keep the connection to the server alive (to avoid connection drop in case of NAT)', required=False)
+        optional.add_argument('--host-name',
+                              help='name of the peer, resolvable via wgstarman resolv', required=False)
         optional.add_argument('--overwrite', default=False, action='store_true',
                               help="overwrite if a configuration already exists", required=False)
         optional.add_argument('--debug', default=False, action='store_true',
@@ -95,7 +97,8 @@ class PeerCommand(CLICommand):
 
             # Send the IP address hold message
             sock = socket.create_connection((server_address, args.server_port), 5000)
-            send_message(sock, IPAddressHoldRequest(conf.interface.address[0]), encdec_key)
+            send_message(sock, IPAddressHoldRequest(
+                conf.interface.address[0], args.host_name), encdec_key)
             response: Union[AcknowledgeResponse, ErrorResponse] = MessageEncDec.loads(
                 read_message(sock, encdec_key))
             if response.instance_of(ErrorResponse):

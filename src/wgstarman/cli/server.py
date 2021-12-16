@@ -179,25 +179,40 @@ class ServerCommand(CLICommand):
         ip_address = req.ip_address
 
         public_key = self.inverse_temp_address_assoc[ip_address] if ip_address in self.inverse_temp_address_assoc else None
-        peer: Peer = next(
+        conf_peer: Peer = next(
             (peer for peer in self.config.peers if peer.allowed_ips[0] == ip_address), None)
 
-        if not public_key and not peer:
+        if not public_key and not conf_peer:
             logging.warning(
                 f'A user attempted to hold the following unreleased IP address: {ip_address}')
             return ErrorResponse(ErrorCode.INVALID_IP_ADDRESS.value, 'The requested IP has not been assigned by this server')
 
-        if peer:
-            return AcknowledgeResponse()
+        public_key = public_key or conf_peer.public_key
 
-        peer = Peer(public_key=public_key, allowed_ips=[ip_address])
+        peer_by_name = self.config.find_peer_by_name(req.host_name)
+        if peer_by_name and peer_by_name.public_key != public_key:
+            logging.warning(
+                f'A peer attempted to name itself with the name of another one: {req.host_name} - {public_key}')
+
+            if public_key in self.temp_address_assoc:
+                del self.temp_address_assoc[public_key]
+
+            return ErrorResponse(ErrorCode.HOST_NAME_THEFT.value, 'The requested host name has already been assigned to another peer')
+
+        peer = Peer(public_key=public_key, allowed_ips=[
+                    ip_address], name=req.host_name) if public_key else None
+
+        if peer == conf_peer:
+            return AcknowledgeResponse()
 
         logging.info(f'Registering IP address {ip_address} to {public_key}')
 
-        self.config.peers.append(peer)
+        self.config.append_peer(peer)
         self.config.save(self.device_name)
 
-        del self.temp_address_assoc[public_key]
+        if public_key in self.temp_address_assoc:
+            del self.temp_address_assoc[public_key]
+
         if WireGuardCLI.hot_reload(self.device_name):
             return AcknowledgeResponse()
 

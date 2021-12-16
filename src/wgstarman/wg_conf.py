@@ -1,8 +1,9 @@
 import logging
 from collections import namedtuple
 from dataclasses import dataclass, field
+from functools import reduce
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, List, Optional, Tuple
 
 DEFAULT_WIREGUARD_ETC_DIR = '/etc/wireguard'
 
@@ -70,6 +71,7 @@ class Peer:
     preshared_key: Optional[str] = field(default=None)
     endpoint: Optional[str] = field(default=None)
     persistend_keep_alive: Optional[int] = field(default=None)
+    name: Optional[str] = field(default=None)
 
     @staticmethod
     def parse(section: str):
@@ -79,6 +81,7 @@ class Peer:
             KwargResolve('PresharedKey', 'preshared_key', str),
             KwargResolve('Endpoint', 'endpoint', str),
             KwargResolve('PersistentKeepalive', 'persistend_keep_alive', int),
+            KwargResolve('# Name', 'name', str),
         ]
 
         kwargs = {}
@@ -93,6 +96,8 @@ class Peer:
     def __str__(self) -> str:
         result = []
         result.append('[Peer]')
+        if self.name:
+            result.append(f'# Name = {self.name}')
         result.append(f'PublicKey = {self.public_key}')
         result.append(f'AllowedIPs = {",".join(self.allowed_ips)}')
         if self.preshared_key:
@@ -104,13 +109,29 @@ class Peer:
 
         return '\n'.join(result)
 
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Peer):
+            return False
 
-@dataclass
+        def cmp(attr: str) -> bool:
+            a = getattr(self, attr)
+            b = getattr(other, attr)
+
+            if type(a) == list:
+                a = ','.join(a)
+                b = ','.join(b)
+
+            return a == b or a is None and b is None
+
+        return reduce(lambda cumu, attr: cumu and cmp(attr), vars(self).keys(), True)
+
+
+@ dataclass
 class WireGuardConf:
     interface: Interface
     peers: List[Peer] = field(default_factory=lambda: [])
 
-    @staticmethod
+    @ staticmethod
     def parse(device_name: str, conf_path: str = DEFAULT_WIREGUARD_ETC_DIR) -> Optional['WireGuardConf']:
         logger = logging.getLogger('WireGuard ConfParser')
         path = Path(conf_path).joinpath(f'{device_name}.conf')
@@ -154,3 +175,13 @@ class WireGuardConf:
             parts = [str(self.interface)]
             parts.extend([str(peer) for peer in self.peers])
             fp.write('\n\n'.join(parts) + '\n')
+
+    def append_peer(self, peer: Peer) -> None:
+        old_peer = next((pr for pr in self.peers if peer.public_key == peer.public_key), None)
+        if old_peer:
+            self.peers.remove(old_peer)
+
+        self.peers.append(peer)
+
+    def find_peer_by_name(self, peer_name: str) -> Optional[Peer]:
+        return next((peer for peer in self.peers if peer.name == peer_name), None)
