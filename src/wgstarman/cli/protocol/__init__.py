@@ -26,7 +26,7 @@ class ErrorCode(Enum):
     UNABLE_TO_RELOAD_CONFIGURATION = 10004,
 
 
-INVALID_MSG_LEN = 0xFFFF
+INVALID_TOKEN_LEN = 0xFFFF
 
 
 def send_message(conn: socket.socket, msg: Any, encrypt_key: Optional[bytes] = None) -> None:
@@ -44,14 +44,14 @@ def send_message(conn: socket.socket, msg: Any, encrypt_key: Optional[bytes] = N
 
 
 def send_invalid_token_message(conn: socket.socket) -> None:
-    msg = INVALID_MSG_LEN.to_bytes(4, 'big', signed=False)
+    msg = INVALID_TOKEN_LEN.to_bytes(4, 'big', signed=False)
 
     conn.send(msg)
 
 
 def read_message(conn: socket.socket, decrypt_key: Optional[bytes] = None) -> str:
     msg_len = int.from_bytes(conn.recv(4), 'big', signed=False)
-    if msg_len == INVALID_MSG_LEN:
+    if msg_len == INVALID_TOKEN_LEN:
         raise ProtocolException('The pre-shared key is invalid.')
 
     msg = conn.recv(msg_len)
