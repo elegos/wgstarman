@@ -121,7 +121,7 @@ class ServerCommand(CLICommand):
         if not WireGuardCLI.up(self.device_name):
             return
 
-        print(f'\n\nPRE-SHARED KEY: {psk_str}\n')
+        logging.info('WGSTARMAN PRE-SHARED KEY: {psk_str}')
 
         self.listen(args)
 
