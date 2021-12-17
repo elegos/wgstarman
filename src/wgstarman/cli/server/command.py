@@ -16,6 +16,7 @@ from wgstarman.cli.protocol import (AcknowledgeResponse, ErrorCode,
                                     IPAddressRequest, IPAddressResponse,
                                     Message, MessageEncDec, read_message, send_invalid_token_message,
                                     send_message)
+from wgstarman.cli.server.resolver import ResolverServer
 from wgstarman.cli.wgstarman_conf import WGStarManConf
 from wgstarman.decorators import syncronized
 from wgstarman.wg_conf import Interface, Peer, WireGuardConf
@@ -129,11 +130,14 @@ class ServerCommand(CLICommand):
         current_peer = next(
             (peer for peer in self.config.peers if peer.public_key == req.public_key), None)
 
+        resolver_addresses = list(map(lambda x: x.split('/')[0], self.config.interface.address))
+
         if current_peer:
             return IPAddressResponse(
                 server_public_key=public_key,
                 peer_address=current_peer.allowed_ips[0],
                 peer_allowed_ips=str(self.ipv6_interface.network),
+                resolver_addresses=resolver_addresses,
             )
 
         if req.public_key in self.temp_address_assoc:
@@ -141,9 +145,10 @@ class ServerCommand(CLICommand):
                 server_public_key=public_key,
                 peer_address=str(self.temp_address_assoc[public_key]),
                 peer_allowed_ips=str(self.ipv6_interface.network),
+                resolver_addresses=resolver_addresses,
             )
 
-        used_ip_addresses = [ipaddress.ip_address(self.config.interface.address[0].split('/')[0])]
+        used_ip_addresses = [ipaddress.ip_address(resolver_addresses[0])]
         used_ip_addresses.extend([ipaddress.ip_address(peer.allowed_ips[0].split('/')[0])
                                   for peer in self.config.peers])
         used_ip_addresses.extend(self.temp_address_assoc.values())
@@ -172,6 +177,7 @@ class ServerCommand(CLICommand):
             server_public_key=public_key,
             peer_address=str(ip_address),
             peer_allowed_ips=str(self.ipv6_interface.network),
+            resolver_addresses=resolver_addresses,
         )
 
     @syncronized(conf_edit_lock)
@@ -264,6 +270,10 @@ class ServerCommand(CLICommand):
                 thread.join()
 
     def listen(self, args: Namespace):
+        # TODO: split command server and address manager
+
+        threads: List[Thread] = []
+
         if args.enable_listen_ipv6 and socket.has_dualstack_ipv6():
             sock = socket.create_server((args.listen_address_6, args.listen_port),
                                         family=socket.AF_INET6, dualstack_ipv6=True)
@@ -271,8 +281,20 @@ class ServerCommand(CLICommand):
             sock = socket.create_server(
                 (args.listen_address_4, args.listen_port), family=socket.AF_INET)
 
-        thread = Thread(target=self.socket_listen, args=[sock])
-        thread.start()
+        threads.append(Thread(target=self.socket_listen, args=[sock]))
 
-        # Wait for the thread to end
-        thread.join()
+        for address in self.config.interface.address:
+            resolver = ResolverServer(
+                bind_address=ipaddress.ip_address(address.split('/')[0]),
+                bind_port=args.listen_port + 1,
+                config=self.config,
+                end_signal=self.end_signal,
+            )
+            threads.append(Thread(target=resolver.listen))
+
+        for thread in threads:
+            thread.start()
+
+        # Wait for the threads to end
+        for thread in threads:
+            thread.join()

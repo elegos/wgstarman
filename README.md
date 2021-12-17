@@ -72,6 +72,7 @@ wgstarman peer --server-address xx.yy.zz.kk
                [--server-port 1194]
                --device-name wg0
                --psk ODjCtWVtBzAq11clgtEwYxhHfEz8asGmnzwEQsqIZTU=
+               [--host-name peer-name]
                [--keep-alive]
                [--overwrite]
                [--debug]
@@ -81,6 +82,7 @@ wgstarman peer --server-address xx.yy.zz.kk
 - `--server-port` (default 1194) the port on which the server is listening (see server configuration)
 - `--device-name` the device and configuration file WireGuard will use for this VPN
 - `--psk` the pre-shared key, given by the server at startup
+- `--host-name` name of the peer, resolvable via wgstarman resolv (optional)
 - `--keep-alive` keep the connection to the server alive (to avoid connection drop in case of NAT)
 - `--overwrite` overwrite if a configuration already exists
 - `--debug` enable debug log
@@ -88,3 +90,30 @@ wgstarman peer --server-address xx.yy.zz.kk
 Once the command is given and throws no errors, a configuration file is being written in `/etc/wireguard/[device-name].conf` and the connection is established; the VPN connection can thus be upped or downed via the `wg-quick` commands.
 
 In case `wgstarman` is used again specifying an already configured device name, it will connect to the `wgstarman` server again and verify its address / public key against the server's configuration: in case the server doesn't have the peer's record, it will assign a new IP and the peer will overwrite its own configuration.
+
+## Resolving VPN names
+
+As WireGuard supports only layer 3 of the ISO/OSI stack, peers can't use multicast messages to share their positions (for instance using ZeroConf's mDNS protocol).
+
+The tool also intentionally doesn't change the system's resolv configuration, as each system may vary and this might lead to unwanted behaviours (i.e. removing company's name servers etc).
+
+As a result, the tool supports a DNS-like mechanism to resolve host names into their VPN IP addresses. This sub-command can be used as regular users.
+
+The server replying to the resolv requests is the same which assigns the IP addresses, so it always knows which host have which address.
+
+```bash
+wgstarman resolv --device-name, -d wg0
+                 [--resolv-port, -p 1195]
+                 {host_name}
+```
+
+- `--device-name`, `-d` the device associated with the network
+- `--resolv-port`, `-p` the resolv port (server listen port + 1) 
+- `{host_name}` the host name to query
+
+The resolv command will output the list of the found address(es) connected to the central peer, one address per line. In case of error, an error will be logged in stderr.
+
+Exit codes:
+- `0` no error
+- `1` resolv server error
+- `2` unable to connect to resolv server

@@ -30,8 +30,24 @@ class IPAddressResponse(Message):
     server_public_key: str
     peer_address: str
     peer_allowed_ips: str
+    resolver_addresses: List[str]
 
     message_type: ClassVar[str] = 'ip_address_response'
+
+
+@dataclass
+class ResolveRequest(Message):
+    host_name: str
+
+    message_type: ClassVar[str] = 'resolv_request'
+
+
+@dataclass
+class ResolveResponse(Message):
+    host_name: str
+    ip_addresses: List[str]
+
+    message_type: ClassVar[str] = 'resolv_response'
 
 
 @dataclass
@@ -47,5 +63,8 @@ class AcknowledgeResponse(Message):
 
 
 T = TypeVar('T', bound=Message)
-REGISTERED_MESSAGES: List[Type[T]] = [IPAddressRequest, IPAddressHoldRequest,
-                                      IPAddressResponse, ErrorResponse, AcknowledgeResponse]
+REGISTERED_MESSAGES: List[Type[T]] = [
+    IPAddressRequest, IPAddressHoldRequest, IPAddressResponse,
+    ResolveRequest, ResolveResponse,
+    ErrorResponse, AcknowledgeResponse
+]

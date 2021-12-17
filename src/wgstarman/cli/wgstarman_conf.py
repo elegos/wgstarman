@@ -1,9 +1,8 @@
 from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Optional
-import stat
 
-DEFAULT_WGSTARMAN_PATH = '/etc/wgstarman/wgstarman.conf'
+from wgstarman.cli.common import DEFAULT_WGSTARMAN_CONF_PATH, ETC_DIR_MODE, WG_CONF_FILE_MODE
 
 
 @dataclass
@@ -25,7 +24,7 @@ class WGStarManConf:
     preshared_keys: List[PresharedKey]
 
     @staticmethod
-    def load(conf_path: str = DEFAULT_WGSTARMAN_PATH) -> 'WGStarManConf':
+    def load(conf_path: str = DEFAULT_WGSTARMAN_CONF_PATH) -> 'WGStarManConf':
         path = Path(conf_path)
 
         if not path.exists():
@@ -38,15 +37,13 @@ class WGStarManConf:
 
         return WGStarManConf(preshared_keys)
 
-    def save(self, conf_path: str = DEFAULT_WGSTARMAN_PATH) -> None:
-        chmod_mode = stat.S_IWUSR | stat.S_IRUSR
-
+    def save(self, conf_path: str = DEFAULT_WGSTARMAN_CONF_PATH) -> None:
         path = Path(conf_path)
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.parent.chmod(chmod_mode)
+        path.parent.chmod(ETC_DIR_MODE)
 
         path.write_text('\n'.join(map(lambda psk: str(psk), self.preshared_keys)) + '\n')
-        path.chmod(chmod_mode)
+        path.chmod(WG_CONF_FILE_MODE)
 
     def get_preshared_key(self, public_key: str) -> Optional[str]:
         return next((psk.preshared_key for psk in self.preshared_keys if psk.public_key == public_key), None)

@@ -10,6 +10,7 @@ from wgstarman.cli.protocol import (AcknowledgeResponse, ErrorResponse,
                                     IPAddressHoldRequest, IPAddressRequest,
                                     IPAddressResponse, MessageEncDec, ProtocolException,
                                     read_message, send_message)
+from wgstarman.cli.wgstarman_resolvers import WGStarManResolver
 from wgstarman.wg_conf import Interface, Peer, WireGuardConf
 from wgstarman.wgcli.exec import WireGuardCLI
 
@@ -19,7 +20,8 @@ LOG_FORMAT = '%(levelname)9s %(message)s'
 class PeerCommand(CLICommand):
     task_name = 'peer'
 
-    def configure_logging(self, args: Namespace) -> None:
+    @staticmethod
+    def configure_logging(args: Namespace) -> None:
         logging.basicConfig(format=LOG_FORMAT, level=logging.DEBUG if args.debug else logging.INFO)
 
     def decorate_subparsers(self, subparsers: _SubParsersAction) -> None:
@@ -77,7 +79,7 @@ class PeerCommand(CLICommand):
         public_key = WireGuardCLI.get_public_key(private_key)
 
         logging.debug(f'Connecting to central peer ({server_address} : {args.server_port})')
-        sock = socket.create_connection((server_address, args.server_port), 5000)
+        sock = socket.create_connection((server_address, args.server_port), 5)
 
         try:
             # Request an IP address assigned to the public key
@@ -86,14 +88,18 @@ class PeerCommand(CLICommand):
                 read_message(sock, encdec_key))
             if response.instance_of(ErrorResponse):
                 logging.error(f'{response.error_code}: {response.message}')
+
                 return
 
             conf = WireGuardConf(
                 Interface(private_key=private_key, address=[
                     response.peer_address]),
-                [Peer(public_key=response.server_public_key, allowed_ips=[response.peer_allowed_ips],
-                      endpoint=f'{server_address}:{args.server_port}', persistend_keep_alive=25 if args.keep_alive else None)]
+                [Peer(
+                    public_key=response.server_public_key, allowed_ips=[response.peer_allowed_ips],
+                    endpoint=f'{server_address}:{args.server_port}', persistend_keep_alive=25 if args.keep_alive else None)]
             )
+            resolv_conf = WGStarManResolver.load(args.device_name)
+            resolv_conf.resolver_addresses = response.resolver_addresses
 
             # Send the IP address hold message
             sock = socket.create_connection((server_address, args.server_port), 5000)
@@ -106,6 +112,7 @@ class PeerCommand(CLICommand):
                 return
 
             conf.save(args.device_name)
+            resolv_conf.save()
 
             WireGuardCLI.up(args.device_name)
         except ProtocolException as e:
