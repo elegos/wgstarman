@@ -260,7 +260,7 @@ class ServerCommand(CLICommand):
                 thread = Thread(target=self.address_manager_routine, args=[connection, address])
                 thread.start()
                 threads.append(thread)
-            except TimeoutError:
+            except socket.timeout:
                 pass
 
         sock.close()

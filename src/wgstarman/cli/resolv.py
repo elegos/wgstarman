@@ -66,7 +66,7 @@ class ResolvCommand(CLICommand):
                 print('\n'.join(message.ip_addresses))
 
                 return
-            except TimeoutError:
+            except socket.timeout:
                 pass
 
         logging.error('Unable to contact resolv server')

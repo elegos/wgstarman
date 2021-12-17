@@ -46,7 +46,7 @@ class ResolverServer:
                 thread = Thread(target=self.request_handler, args=[connection, address])
                 thread.start()
                 threads.append(thread)
-            except TimeoutError:
+            except socket.timeout:
                 pass
 
         sock.close()
