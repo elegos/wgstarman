@@ -196,15 +196,16 @@ class ServerCommand(CLICommand):
 
         public_key = public_key or conf_peer.public_key
 
-        peer_by_name = self.config.find_peer_by_name(req.host_name)
-        if peer_by_name and peer_by_name.public_key != public_key:
-            logging.warning(
-                f'A peer attempted to name itself with the name of another one: {req.host_name} - {public_key}')
+        if req.host_name:
+            peer_by_name = self.config.find_peer_by_name(req.host_name)
+            if peer_by_name and peer_by_name.public_key != public_key:
+                logging.warning(
+                    f'A peer attempted to name itself with the name of another one: {req.host_name} - {public_key}')
 
-            if public_key in self.temp_address_assoc:
-                del self.temp_address_assoc[public_key]
+                if public_key in self.temp_address_assoc:
+                    del self.temp_address_assoc[public_key]
 
-            return ErrorResponse(ErrorCode.HOST_NAME_THEFT.value, 'The requested host name has already been assigned to another peer')
+                return ErrorResponse(ErrorCode.HOST_NAME_THEFT.value, 'The requested host name has already been assigned to another peer')
 
         peer = Peer(public_key=public_key, allowed_ips=[
                     ip_address], name=req.host_name) if public_key else None

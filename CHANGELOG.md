@@ -4,10 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.1.7] - 2021-12-17
+## [0.1.8] - 2021-12-17
 ### Changed
 - Fixed `except TimeoutError` for python version < 3.10
 - Fixed minimum python version required (3.8)
+- Fixed host name check if host name not given
 - Tuned up wireguard file modes
 - Added special 'resolv' hostname for resolv command
 
