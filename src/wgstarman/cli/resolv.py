@@ -49,6 +49,12 @@ class ResolvCommand(CLICommand):
 
             return
 
+        # special case: resolv will return the resolver's IP addresses
+        if args.host_name == 'resolv':
+            print('\n'.join(resolv_conf.resolver_addresses))
+
+            return
+
         host_name = args.host_name
         resolver_port = args.resolv_port
         for resolv_address in resolv_conf.resolver_addresses:
