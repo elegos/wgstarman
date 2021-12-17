@@ -5,6 +5,8 @@ from functools import reduce
 from pathlib import Path
 from typing import Any, List, Optional, Tuple
 
+from wgstarman.cli.common import ETC_DIR_MODE
+
 DEFAULT_WIREGUARD_ETC_DIR = '/etc/wireguard'
 
 KwargResolve = namedtuple('KwargResolver', ['wg_name', 'conf_name', 'type'])
@@ -170,6 +172,9 @@ class WireGuardConf:
 
     def save(self, device_name: str, conf_path: str = DEFAULT_WIREGUARD_ETC_DIR):
         path = Path(conf_path).joinpath(f'{device_name}.conf')
+        if not path.parent.exists():
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.parent.chmod(ETC_DIR_MODE)
 
         with path.open('w') as fp:
             parts = [str(self.interface)]

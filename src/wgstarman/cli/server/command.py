@@ -110,12 +110,13 @@ class ServerCommand(CLICommand):
 
         srv_conf = WGStarManConf.load()
         public_key = WireGuardCLI.get_public_key(self.config.interface.private_key)
-        self.enc_key = srv_conf.get_preshared_key(public_key).encode('utf8')
-        psk_str = self.enc_key.decode('utf8')
-        if not self.enc_key or args.refresh_psk:
+        psk_str = srv_conf.get_preshared_key(public_key)
+        if not psk_str or args.refresh_psk:
             self.enc_key = Fernet.generate_key()
             psk_str = self.enc_key.decode('utf8')
             srv_conf.set_preshared_key(public_key, psk_str)
+        else:
+            self.enc_key = srv_conf.get_preshared_key(public_key).encode('utf8')
 
         if not WireGuardCLI.up(self.device_name):
             return
