@@ -3,9 +3,10 @@ from argparse import Namespace, _SubParsersAction
 from pathlib import Path
 import stat
 
-ETC_DIR_MODE = stat.S_IWUSR | stat.S_IRUSR | stat.S_IXUSR
 WG_CONF_FILE_MODE = stat.S_IWUSR | stat.S_IRUSR
+WG_DIR_MODE = stat.S_IXUSR | stat.S_IWUSR | stat.S_IRUSR
 
+ETC_DIR_MODE = stat.S_IWUSR | stat.S_IRUSR | stat.S_IXUSR
 RESOLVERS_ETC_DIR_MODE = stat.S_IWUSR | stat.S_IRUSR | stat.S_IXUSR \
     | stat.S_IRGRP | stat.S_IXGRP \
     | stat.S_IROTH | stat.S_IXOTH

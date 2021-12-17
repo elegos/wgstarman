@@ -5,7 +5,7 @@ from functools import reduce
 from pathlib import Path
 from typing import Any, List, Optional, Tuple
 
-from wgstarman.cli.common import ETC_DIR_MODE
+from wgstarman.cli.common import ETC_DIR_MODE, WG_CONF_FILE_MODE, WG_DIR_MODE
 
 DEFAULT_WIREGUARD_ETC_DIR = '/etc/wireguard'
 
@@ -174,12 +174,14 @@ class WireGuardConf:
         path = Path(conf_path).joinpath(f'{device_name}.conf')
         if not path.parent.exists():
             path.parent.mkdir(parents=True, exist_ok=True)
-            path.parent.chmod(ETC_DIR_MODE)
+            path.parent.chmod(WG_DIR_MODE)
 
         with path.open('w') as fp:
             parts = [str(self.interface)]
             parts.extend([str(peer) for peer in self.peers])
             fp.write('\n\n'.join(parts) + '\n')
+        
+        path.chmod(WG_CONF_FILE_MODE)
 
     def append_peer(self, peer: Peer) -> None:
         old_peer = next((pr for pr in self.peers if peer.public_key == peer.public_key), None)
