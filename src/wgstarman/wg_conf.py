@@ -180,11 +180,11 @@ class WireGuardConf:
             parts = [str(self.interface)]
             parts.extend([str(peer) for peer in self.peers])
             fp.write('\n\n'.join(parts) + '\n')
-        
+
         path.chmod(WG_CONF_FILE_MODE)
 
     def append_peer(self, peer: Peer) -> None:
-        old_peer = next((pr for pr in self.peers if peer.public_key == peer.public_key), None)
+        old_peer = next((pr for pr in self.peers if peer.public_key == pr.public_key), None)
         if old_peer:
             self.peers.remove(old_peer)
 

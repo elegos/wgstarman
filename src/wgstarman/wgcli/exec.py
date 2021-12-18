@@ -1,5 +1,6 @@
 import logging
 import subprocess
+from functools import reduce
 
 
 class WireGuardCLI:
@@ -77,10 +78,13 @@ class WireGuardCLI:
         return True
 
     def hot_reload(device_name) -> bool:
-        result = subprocess.run(
-            f'wg syncconf {device_name} <(wg-quick strip {device_name})', shell=True)
+        results = [
+            subprocess.run(f'wg-quick down {device_name}', shell=True),
+            subprocess.run(f'wg-quick up {device_name}', shell=True),
+        ]
 
-        if result.returncode:
+        exit_code = reduce(lambda a, b: a + b, map(lambda a: a.returncode, results))
+        if exit_code:
             WireGuardCLI.logger.error(f'Unable to hot reload device {device_name}')
 
             return False
