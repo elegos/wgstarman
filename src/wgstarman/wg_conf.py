@@ -1,5 +1,4 @@
 import logging
-from collections import namedtuple
 from dataclasses import dataclass, field
 from functools import reduce
 from pathlib import Path
@@ -9,7 +8,12 @@ from wgstarman.cli.common import ETC_DIR_MODE, WG_CONF_FILE_MODE, WG_DIR_MODE
 
 DEFAULT_WIREGUARD_ETC_DIR = '/etc/wireguard'
 
-KwargResolve = namedtuple('KwargResolver', ['wg_name', 'conf_name', 'type'])
+
+@dataclass
+class KwargResolve:
+    wg_name: str
+    conf_name: str
+    type: type
 
 
 def resolve(resolver: List[KwargResolve], setting: str, value: str) -> Tuple[str, Any]:
